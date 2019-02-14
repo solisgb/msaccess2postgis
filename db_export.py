@@ -7,6 +7,13 @@ Created on Sat Feb  9 13:12:53 2019
 
 
 def access_types_in_db(db):
+    """
+    gets access columns types in databese db
+    IN
+    db (str)
+    OUT
+    mytypes ([str]): list with access type names in db
+    """
     import pyodbc
     import db_con_str
 
@@ -52,16 +59,21 @@ def ms_access_structure_get(db, dir_out, wstruct=1, wdata=0):
         for i, table_name in enumerate(tables):
             print('{0:d}. {1}'.format(i+1, table_name))
             columns = [[row.ordinal_position, row.column_name, row.type_name,
-                        row.column_size, row.nullable, row.is_nullable]
+                        row.column_size, row.nullable, row.remarks]
                        for row in cur.columns(table=table_name)]
-            write_table_struct(fo, table_name, columns)
+            pk_cols = [[row[7], row[8]]
+                       for row in cur.statistics(table_name)
+                       if row[5] is not None and
+                       row[5].upper() == 'PRIMARYKEY']
+
+            write_table_struct(fo, table_name, columns, pk_cols)
             if wdata == 1:
                 field_names = [column[1] for column in columns]
                 write_data(table_name, field_names, con, dir_out)
         fo.close()
 
 
-def translate_msa(atype, length, nullable):
+def translate_msa(atype, length):
     """
     translates ms access types to postgis types
     """
@@ -78,7 +90,7 @@ def translate_msa(atype, length, nullable):
     return ttypes[atype]
 
 
-def write_table_struct(fo, table_name, columns):
+def write_table_struct(fo, table_name, columns, pk_cols):
     """
     writes table structure in text file fo
     fo (object file): text file (must be open)
@@ -90,7 +102,12 @@ def write_table_struct(fo, table_name, columns):
     fo.write('\tgid serial primary key\n')
     for column in columns:
         fo.write('\t{} {}\n'.format(column[1], translate_msa(column[2],
-                 column[3], column[4])))
+                 column[3])))
+    pk_columns = [row[1] for row in pk_cols]
+    if len(pk_columns) > 0:
+        pk_cstr = ','.join(pk_columns)
+        fo.write('\tconstraint unique ({})\n'.format(pk_cstr))
+
     fo.write(');\n\n')
 
 
