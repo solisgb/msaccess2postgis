@@ -32,29 +32,66 @@ $$ language plpgsql strict immutable;
 
 -----------------------------------------------------------------------------------------------------------
 
-create or replace function ign.f_ca(geom1 geometry, field_name varchar default 'codnut2') returns varchar
+create or replace function ign.f_cautonoma(geom1 geometry, field_name varchar default 'codnut2'::character varying)
+ returns varchar
 as $function$
 /* returns the value of a varchar field content from table ccaa
    given a multipoint geometry geom1, geom1 must intersect ccaa.geom of multypoligon type
    field_name is the name of a varchar field in table ccaa
 */
 declare
-	textgeom1 varchar;
-	field_value varchar;
+textgeom1 varchar;
+field_value varchar;
+field_value2 varchar;
+begin
+	textgeom1 = st_astext(geom1);
+	execute format('select %i '
+	'from ttmm '
+	'where st_intersects (st_geomfromtext($1, 25830), ttmm.geom)', field_name)
+	into field_value
+	using textgeom1;
+
+	execute format('select %i '
+	'from ccaa '
+	'where %i = $1', field_name, field_name)
+	into field_value2
+	using field_value;
+	return field_value2;
+end;
+$function$ language plpgsql immutable strict;
+----------------------------------------------------------------------------------------------------------------
+
+create or replace function ign.f_provincia(geom1 geometry, field_name varchar default 'codnut2'::character varying)
+ returns varchar
+as $function$
+/* returns the value of a varchar field content from table provincias
+   given a multipoint geometry geom1, geom1 must intersect provincias.geom of multypoligon type
+   field_name is the name of a varchar field in table provincias
+*/
+declare
+textgeom1 varchar;
+field_value varchar;
+field_value2 varchar;
 begin
 	textgeom1 = st_astext(geom1);
 	execute format('select %I '
-	'from ccaa '
-	'where st_intersects (st_geomfromtext($1, 25830), ccaa.geom)', field_name)
+	'from ttmm '
+	'where st_intersects (st_geomfromtext($1, 25830), ttmm.geom)', field_name)
 	into field_value
 	using textgeom1;
-	return field_value;
+
+	execute format('select %I '
+	'from provincias '
+	'where %I = $1', field_name, field_name)
+	into field_value2
+	using field_value;
+	return field_value2;
 end;
-$function$ language plpgsql strict immutable;
+$function$ language plpgsql immutable strict;
 
 ----------------------------------------------------------------------------------------------------------------
 
-create or replace function ign.f_provincia(geom1 geometry, field_name varchar default 'codnut2') returns varchar
+create or replace function ign.f_tmunicipal(geom1 geometry, field_name varchar default 'codnut2') returns varchar
 as $function$
 /* returns the value of a varchar field content from table provincias
    given a multipoint geometry geom1, geom1 must intersect ccaa.geom of multypoligon type
@@ -66,8 +103,8 @@ declare
 begin
 	textgeom1 = st_astext(geom1);
 	execute format('select %I '
-	'from provincias '
-	'where st_intersects (st_geomfromtext($1, 25830), provincias.geom)', field_name)
+	'from ttmm '
+	'where st_intersects (st_geomfromtext($1, 25830), ttmm.geom)', field_name)
 	into field_value
 	using textgeom1;
 	return field_value;
