@@ -1,5 +1,9 @@
 # msaccess to postgres
-Read the structure from a ms access database a write a psql file with create tables sql sentences
+It reads the tables definition from a ms access database and write a sql file with create tables sql sentences, using pyodbc.
+pyodbc can not retrieves foreign keys directly because of the driver; I make a copy of MsysRelationShips and then I can read it.
+Now the script only manages one field primary keys and foreign keys. Optionally, you can make a copy of all the tables in csv format and write a sql file with psql sentences to import the data.
+
+You can modify the string connection to change the DMS; in this case you must write a short piece of code to read foreign keys.
 
 dbexport_main; script para:
 
